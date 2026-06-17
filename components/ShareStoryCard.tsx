@@ -20,12 +20,23 @@ export default function ShareStoryCard({ imageDataUrl, result }: ShareStoryCardP
   const [previewUrl, setPreviewUrl] = useState("");
   const [ready, setReady] = useState(false);
   const [feedback, setFeedback] = useState("");
-  const [isSaveViewOpen, setIsSaveViewOpen] = useState(false);
+  const [isCaptureModeOpen, setIsCaptureModeOpen] = useState(false);
   const [isInstagram, setIsInstagram] = useState(false);
 
   useEffect(() => {
     setIsInstagram(isInstagramInAppBrowser());
   }, []);
+
+  useEffect(() => {
+    if (!isCaptureModeOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isCaptureModeOpen]);
 
   useEffect(() => {
     let mounted = true;
@@ -55,14 +66,14 @@ export default function ShareStoryCard({ imageDataUrl, result }: ShareStoryCardP
     window.setTimeout(() => setFeedback(""), 3600);
   }
 
+  function openCaptureMode() {
+    if (!previewUrl) return;
+    setIsCaptureModeOpen(true);
+    showFeedback(isInstagram ? "เปิดโหมดแคปแล้ว แคปหน้าจอนี้เพื่อนำไปลง Story ได้เลย" : "เปิดการ์ดเต็มจอแล้ว");
+  }
+
   async function downloadStory() {
     if (!canvasRef.current) return;
-
-    if (isInstagram) {
-      setIsSaveViewOpen(true);
-      showFeedback("Instagram อาจไม่อนุญาตให้ดาวน์โหลดตรง ๆ เปิดการ์ดเต็มจอให้เซฟหรือแคปแทนนะ");
-      return;
-    }
 
     try {
       const blob = await canvasToPngBlob(canvasRef.current);
@@ -76,15 +87,9 @@ export default function ShareStoryCard({ imageDataUrl, result }: ShareStoryCardP
       window.setTimeout(() => URL.revokeObjectURL(url), 15000);
       showFeedback("เริ่มบันทึกการ์ดแล้ว");
     } catch {
-      setIsSaveViewOpen(true);
-      showFeedback("บันทึกตรงไม่ได้ เปิดการ์ดเต็มจอให้กดค้างหรือแคปแทนนะ");
+      openCaptureMode();
+      showFeedback("บันทึกตรงไม่ได้ เปิดการ์ดเต็มจอให้แคปแทนนะ");
     }
-  }
-
-  function openSaveView() {
-    if (!previewUrl) return;
-    setIsSaveViewOpen(true);
-    showFeedback("เปิดการ์ดเต็มจอแล้ว กดค้างที่ภาพหรือแคปหน้าจอได้เลย");
   }
 
   async function shareStory() {
@@ -109,15 +114,15 @@ export default function ShareStoryCard({ imageDataUrl, result }: ShareStoryCardP
           title: "ฟ้าข้างใน",
           text: result.storyText || result.skyName,
         });
-        showFeedback("แชร์ข้อความแล้ว ถ้าจะลง Story ให้เปิดรูปเต็มจอเพื่อเซฟภาพนะ");
+        showFeedback(isInstagram ? "ถ้าจะลง Story ให้ใช้แคป Story แทนนะ" : "แชร์ข้อความแล้ว ถ้าจะลง Story ให้บันทึกรูปเพิ่มนะ");
         return;
       }
 
-      setIsSaveViewOpen(true);
-      showFeedback("เครื่องนี้ยังแชร์ตรงไม่ได้ เปิดการ์ดเต็มจอให้เซฟแทนนะ");
+      openCaptureMode();
+      showFeedback("เครื่องนี้ยังแชร์ตรงไม่ได้ เปิดโหมดแคปให้แทนนะ");
     } catch {
-      setIsSaveViewOpen(true);
-      showFeedback("แชร์ไม่สำเร็จ เปิดการ์ดเต็มจอให้เซฟหรือแคปแทนนะ");
+      openCaptureMode();
+      showFeedback("แชร์ไม่สำเร็จ เปิดโหมดแคปให้แทนนะ");
     }
   }
 
@@ -130,10 +135,12 @@ export default function ShareStoryCard({ imageDataUrl, result }: ShareStoryCardP
     >
       <div className="mb-3">
         <p className="text-sm font-black text-ink">การ์ดลง Story</p>
-        <p className="mt-1 text-xs leading-5 text-softGray">ขนาด 1080 x 1920 พร้อมพื้นหลังนุ่มและข้อความสำหรับแชร์</p>
+        <p className="mt-1 text-xs leading-5 text-softGray">
+          {isInstagram ? "Instagram ไม่อนุญาตให้เว็บบันทึกรูปตรง ๆ ใช้โหมดแคป Story จะเสถียรที่สุด" : "ขนาด 1080 x 1920 พร้อมพื้นหลังนุ่มและข้อความสำหรับแชร์"}
+        </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className={isInstagram ? "grid grid-cols-2 gap-2" : "grid grid-cols-3 gap-2"}>
         <button
           className="min-h-10 rounded-[8px] bg-[#55788f] px-3 text-sm font-extrabold text-white disabled:opacity-45"
           disabled={!ready}
@@ -142,22 +149,36 @@ export default function ShareStoryCard({ imageDataUrl, result }: ShareStoryCardP
         >
           แชร์
         </button>
-        <button
-          className="min-h-10 rounded-[8px] bg-white px-3 text-sm font-extrabold text-[#55788f] disabled:opacity-45"
-          disabled={!ready}
-          onClick={downloadStory}
-          type="button"
-        >
-          บันทึก
-        </button>
-        <button
-          className="min-h-10 rounded-[8px] bg-white px-3 text-sm font-extrabold text-[#55788f] disabled:opacity-45"
-          disabled={!ready}
-          onClick={openSaveView}
-          type="button"
-        >
-          ดูเต็มจอ
-        </button>
+
+        {isInstagram ? (
+          <button
+            className="min-h-10 rounded-[8px] bg-[#d7a96f] px-3 text-sm font-extrabold text-white disabled:opacity-45"
+            disabled={!ready}
+            onClick={openCaptureMode}
+            type="button"
+          >
+            แคป Story
+          </button>
+        ) : (
+          <>
+            <button
+              className="min-h-10 rounded-[8px] bg-white px-3 text-sm font-extrabold text-[#55788f] disabled:opacity-45"
+              disabled={!ready}
+              onClick={downloadStory}
+              type="button"
+            >
+              บันทึก
+            </button>
+            <button
+              className="min-h-10 rounded-[8px] bg-white px-3 text-sm font-extrabold text-[#55788f] disabled:opacity-45"
+              disabled={!ready}
+              onClick={openCaptureMode}
+              type="button"
+            >
+              ดูเต็มจอ
+            </button>
+          </>
+        )}
       </div>
 
       {feedback ? (
@@ -171,53 +192,56 @@ export default function ShareStoryCard({ imageDataUrl, result }: ShareStoryCardP
         </motion.p>
       ) : null}
 
-      {isInstagram ? (
-        <p className="mt-3 rounded-[8px] bg-white/66 px-3 py-2 text-center text-[11px] font-bold leading-5 text-softGray">
-          Instagram browser มักบล็อกการดาวน์โหลด ให้ใช้ปุ่มดูเต็มจอแล้วกดค้างที่ภาพ หรือแคปหน้าจอเพื่อลง Story
-        </p>
-      ) : null}
-
       <button
         className="mt-3 block w-full overflow-hidden rounded-[8px] bg-skyMist text-left"
         disabled={!previewUrl}
-        onClick={openSaveView}
+        onClick={openCaptureMode}
         type="button"
       >
         {previewUrl ? (
-          <img alt="พรีวิวการ์ด Story" className="aspect-[9/16] w-full select-auto object-cover" draggable={false} src={previewUrl} />
+          <img alt="พรีวิวการ์ด Story" className="aspect-[9/16] w-full object-cover" draggable={false} src={previewUrl} />
         ) : (
           <span className="flex aspect-[9/16] w-full items-center justify-center text-sm font-bold text-softGray">กำลังสร้างการ์ด...</span>
         )}
       </button>
 
       <p className="mt-3 text-center text-[11px] font-bold leading-5 text-softGray">
-        ถ้าบันทึกไม่ได้ ให้แตะการ์ดเพื่อดูเต็มจอ แล้วกดค้างที่ภาพหรือแคปหน้าจอ
+        {isInstagram ? "แตะ แคป Story แล้วถ่ายหน้าจอจากโหมดเต็มจอ จะได้รูปพร้อมลง Story ทันที" : "ถ้าบันทึกไม่ได้ ให้แตะการ์ดเพื่อดูเต็มจอ แล้วแคปหน้าจอแทนได้"}
       </p>
 
-      {isSaveViewOpen && previewUrl ? (
-        <div className="fixed inset-0 z-50 grid bg-[#162026]/94 px-4 py-5">
-          <div className="mx-auto flex h-full w-full max-w-md flex-col">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="text-sm font-extrabold text-white">กดค้างที่ภาพเพื่อบันทึก หรือแคปหน้าจอ</p>
+      {isCaptureModeOpen && previewUrl ? (
+        <div className={isInstagram ? "fixed inset-0 z-50 bg-black" : "fixed inset-0 z-50 grid bg-[#162026]/94 px-4 py-5"}>
+          {isInstagram ? (
+            <>
+              <img alt="การ์ด Story สำหรับแคปหน้าจอ" className="h-[100dvh] w-screen object-contain" src={previewUrl} />
               <button
-                className="min-h-10 rounded-[8px] bg-white/14 px-4 text-sm font-extrabold text-white"
-                onClick={() => setIsSaveViewOpen(false)}
+                aria-label="ปิดโหมดแคป Story"
+                className="absolute right-0 top-0 h-20 w-20 opacity-0"
+                onClick={() => setIsCaptureModeOpen(false)}
                 type="button"
-              >
-                ปิด
-              </button>
-            </div>
-            <div className="min-h-0 flex-1 place-content-center">
-              <img
-                alt="การ์ด Story ขนาดเต็ม"
-                className="mx-auto max-h-full w-auto max-w-full select-auto rounded-[8px] object-contain shadow-[0_20px_70px_rgba(0,0,0,0.32)]"
-                src={previewUrl}
               />
+            </>
+          ) : (
+            <div className="mx-auto flex h-full w-full max-w-md flex-col">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-sm font-extrabold text-white">แคปหน้าจอหรือกดบันทึกจาก browser ได้เลย</p>
+                <button
+                  className="min-h-10 rounded-[8px] bg-white/14 px-4 text-sm font-extrabold text-white"
+                  onClick={() => setIsCaptureModeOpen(false)}
+                  type="button"
+                >
+                  ปิด
+                </button>
+              </div>
+              <div className="min-h-0 flex-1 place-content-center">
+                <img
+                  alt="การ์ด Story ขนาดเต็ม"
+                  className="mx-auto max-h-full w-auto max-w-full rounded-[8px] object-contain shadow-[0_20px_70px_rgba(0,0,0,0.32)]"
+                  src={previewUrl}
+                />
+              </div>
             </div>
-            <p className="mt-3 text-center text-xs font-bold leading-5 text-white/72">
-              ใน Instagram ถ้ากดค้างแล้วไม่มีเมนูบันทึก วิธีที่เสถียรที่สุดคือแคปหน้าจอจากหน้านี้
-            </p>
-          </div>
+          )}
         </div>
       ) : null}
 
