@@ -99,6 +99,10 @@ export default function ImageUploader({
       >
         {isCompressing ? "กำลังเตรียมรูป…" : "ให้ฟ้าแปลใจ"}
       </button>
+
+      <p className="rounded-[8px] bg-white/58 px-3 py-2 text-center text-[11px] font-bold leading-5 text-softGray">
+        รูปของคุณจะถูกใช้เพื่อวิเคราะห์ครั้งนี้เท่านั้น ฟ้าข้างในไม่มีระบบบัญชีและไม่เก็บรูปไว้ในฐานข้อมูล
+      </p>
     </div>
   );
 }
