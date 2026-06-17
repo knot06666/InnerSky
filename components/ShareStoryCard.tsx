@@ -215,11 +215,15 @@ export default function ShareStoryCard({ imageDataUrl, result }: ShareStoryCardP
             <>
               <img alt="การ์ด Story สำหรับแคปหน้าจอ" className="h-[100dvh] w-screen object-contain" src={previewUrl} />
               <button
-                aria-label="ปิดโหมดแคป Story"
-                className="absolute right-0 top-0 h-20 w-20 opacity-0"
+                className="absolute right-3 top-[max(12px,env(safe-area-inset-top))] rounded-full bg-black/62 px-4 py-2 text-sm font-extrabold text-white shadow-[0_10px_30px_rgba(0,0,0,0.24)] backdrop-blur-md"
                 onClick={() => setIsCaptureModeOpen(false)}
                 type="button"
-              />
+              >
+                ปิด
+              </button>
+              <p className="pointer-events-none absolute inset-x-4 bottom-[max(12px,env(safe-area-inset-bottom))] rounded-full bg-black/46 px-3 py-2 text-center text-[11px] font-bold leading-5 text-white/82 backdrop-blur-md">
+                แคปหน้าจอนี้ แล้วกดปิดเพื่อกลับไปที่เว็บ
+              </p>
             </>
           ) : (
             <div className="mx-auto flex h-full w-full max-w-md flex-col">
