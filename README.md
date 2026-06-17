@@ -12,7 +12,7 @@ npm run dev
 
 ใส่ `GEMINI_API_KEY` ใน `.env` แล้วเปิด `http://localhost:3000`
 
-ถ้า deploy จริง ให้ตั้ง `NEXT_PUBLIC_SITE_URL` เป็น URL ของเว็บ เช่น `https://your-domain.com` เพื่อให้ลิงก์ที่แชร์มี preview ถูกต้อง
+ถ้า deploy จริง ให้ตั้ง `NEXT_PUBLIC_SITE_URL=https://innersky.vercel.app` หรือ URL ของโดเมนจริง เพื่อให้ลิงก์ที่แชร์มี preview ถูกต้อง
 
 ## MVP Flow
 
