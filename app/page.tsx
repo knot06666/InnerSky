@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import Hero from "@/components/Hero";
 import ImageUploader from "@/components/ImageUploader";
 import LoadingSky from "@/components/LoadingSky";
+import OpenInBrowserBanner from "@/components/OpenInBrowserBanner";
 import ResultCard from "@/components/ResultCard";
 import ShareStoryCard from "@/components/ShareStoryCard";
 import type { MoodTone, SkyResult } from "@/types/result";
@@ -119,6 +120,7 @@ export default function HomePage() {
       <div className="pointer-events-none absolute right-[-48px] top-64 h-32 w-64 rounded-full bg-skyPale/60 blur-3xl" />
 
       <Hero onStart={() => uploaderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} />
+      <OpenInBrowserBanner />
 
       {isDemoMode ? (
         <section className="mx-auto mb-4 max-w-md rounded-[8px] border border-[#d7e6ee] bg-white/70 p-3 text-center shadow-soft backdrop-blur-xl">
