@@ -2,12 +2,28 @@ import type { SkyResult } from "@/types/result";
 
 const storyFont = '"Noto Sans Thai", "LINE Seed Sans TH", Arial, sans-serif';
 
+export function createDownloadFileName(kind: "result" | "story", extension: "txt" | "png") {
+  const now = new Date();
+  const date = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+  ].join("");
+  const time = [
+    String(now.getHours()).padStart(2, "0"),
+    String(now.getMinutes()).padStart(2, "0"),
+    String(now.getSeconds()).padStart(2, "0"),
+  ].join("");
+
+  return `fah-khang-nai-${kind}-${date}-${time}.${extension}`;
+}
+
 export function downloadTextFile(text: string) {
   const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "fah-khang-nai-result.txt";
+  link.download = createDownloadFileName("result", "txt");
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -17,7 +33,7 @@ export function downloadTextFile(text: string) {
 export function downloadCanvas(canvas: HTMLCanvasElement) {
   const link = document.createElement("a");
   link.href = canvas.toDataURL("image/png");
-  link.download = "fah-khang-nai-story.png";
+  link.download = createDownloadFileName("story", "png");
   document.body.appendChild(link);
   link.click();
   link.remove();

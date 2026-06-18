@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { track } from "@vercel/analytics";
 import { useEffect, useRef, useState } from "react";
-import { canvasToDataUrl, canvasToPngBlob, drawStoryCard } from "@/lib/downloadCard";
+import { canvasToDataUrl, canvasToPngBlob, createDownloadFileName, drawStoryCard } from "@/lib/downloadCard";
 import type { SkyResult } from "@/types/result";
 
 type ShareStoryCardProps = {
@@ -84,7 +84,7 @@ export default function ShareStoryCard({ imageDataUrl, result }: ShareStoryCardP
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "fah-khang-nai-story.png";
+      link.download = createDownloadFileName("story", "png");
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -104,7 +104,7 @@ export default function ShareStoryCard({ imageDataUrl, result }: ShareStoryCardP
 
     try {
       const blob = await canvasToPngBlob(canvasRef.current);
-      const file = new File([blob], "fah-khang-nai-story.png", { type: "image/png" });
+      const file = new File([blob], createDownloadFileName("story", "png"), { type: "image/png" });
 
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({
