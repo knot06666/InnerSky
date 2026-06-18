@@ -1,4 +1,6 @@
 import { ImageResponse } from "next/og";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
 export const size = {
   width: 1200,
@@ -7,7 +9,12 @@ export const size = {
 
 export const contentType = "image/png";
 
-export default function Image() {
+const promptRegular = readFile(join(process.cwd(), "app/opengraph-fonts/Prompt-Regular.ttf"));
+const promptBold = readFile(join(process.cwd(), "app/opengraph-fonts/Prompt-Bold.ttf"));
+
+export default async function Image() {
+  const [promptRegularData, promptBoldData] = await Promise.all([promptRegular, promptBold]);
+
   return new ImageResponse(
     (
       <div
@@ -20,26 +27,26 @@ export default function Image() {
           background: "linear-gradient(180deg, #cfe5f2 0%, #fffaf2 55%, #dfe9ef 100%)",
           position: "relative",
           overflow: "hidden",
-          fontFamily: "Arial, sans-serif",
+          fontFamily: "Prompt",
         }}
       >
         <div
           style={{
             position: "absolute",
-            top: 86,
-            left: 154,
+            top: 82,
+            left: 150,
             width: 360,
-            height: 86,
+            height: 88,
             borderRadius: 999,
-            background: "rgba(255,255,255,0.72)",
+            background: "rgba(255,255,255,0.74)",
             filter: "blur(8px)",
           }}
         />
         <div
           style={{
             position: "absolute",
-            top: 112,
-            right: 150,
+            top: 118,
+            right: 142,
             width: 430,
             height: 104,
             borderRadius: 999,
@@ -80,17 +87,38 @@ export default function Image() {
             alignItems: "center",
             justifyContent: "center",
             borderRadius: 36,
-            background: "rgba(255,255,255,0.64)",
+            background: "rgba(255,255,255,0.66)",
             boxShadow: "0 30px 90px rgba(64,88,105,0.16)",
           }}
         >
-          <div style={{ fontSize: 42, fontWeight: 800, color: "#55788f", letterSpacing: 2 }}>INNER SKY</div>
-          <div style={{ marginTop: 28, fontSize: 76, fontWeight: 800, color: "#26313a" }}>Fah Khang Nai</div>
-          <div style={{ marginTop: 24, fontSize: 34, fontWeight: 700, color: "#50616c" }}>A soft Thai sky reading for your heart</div>
-          <div style={{ marginTop: 44, fontSize: 24, fontWeight: 700, color: "rgba(38,49,58,0.55)", letterSpacing: 5 }}>MADE BY knotji</div>
+          <div style={{ fontSize: 34, fontWeight: 800, color: "#55788f" }}>ฟ้าข้างใน</div>
+          <div style={{ marginTop: 22, fontSize: 70, fontWeight: 800, color: "#26313a" }}>วันนี้ท้องฟ้าที่คุณถ่าย</div>
+          <div style={{ marginTop: 12, fontSize: 48, fontWeight: 800, color: "#55788f" }}>อาจกำลังบอกอะไรบางอย่างกับใจคุณ</div>
+          <div style={{ marginTop: 34, fontSize: 28, fontWeight: 600, color: "#50616c" }}>
+            อัปโหลดรูปท้องฟ้า แล้วรับคำปลอบใจเบา ๆ
+          </div>
+          <div style={{ marginTop: 38, fontSize: 22, fontWeight: 700, color: "rgba(38,49,58,0.55)", letterSpacing: 4 }}>
+            MADE BY knotji
+          </div>
         </div>
       </div>
     ),
-    size,
+    {
+      ...size,
+      fonts: [
+        {
+          name: "Prompt",
+          data: promptRegularData,
+          style: "normal",
+          weight: 400,
+        },
+        {
+          name: "Prompt",
+          data: promptBoldData,
+          style: "normal",
+          weight: 800,
+        },
+      ],
+    },
   );
 }
