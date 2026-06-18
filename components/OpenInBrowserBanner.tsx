@@ -2,54 +2,8 @@
 
 import { track } from "@vercel/analytics";
 import { useEffect, useState } from "react";
-
-type InAppBrowser = "instagram" | "line" | "facebook" | "tiktok" | "other";
-
-function detectInAppBrowser(): InAppBrowser | null {
-  if (typeof navigator === "undefined") return null;
-
-  const userAgent = navigator.userAgent;
-  if (/Instagram/i.test(userAgent)) return "instagram";
-  if (/Line/i.test(userAgent)) return "line";
-  if (/FBAN|FBAV|FB_IAB|FBIOS|FB4A/i.test(userAgent)) return "facebook";
-  if (/TikTok/i.test(userAgent)) return "tiktok";
-  if (/wv|WebView/i.test(userAgent)) return "other";
-
-  return null;
-}
-
-function isAndroid() {
-  return typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
-}
-
-function getBrowserName(browser: InAppBrowser) {
-  return {
-    instagram: "Instagram",
-    line: "LINE",
-    facebook: "Facebook",
-    tiktok: "TikTok",
-    other: "แอปนี้",
-  }[browser];
-}
-
-async function copyCurrentUrl() {
-  const url = window.location.href;
-
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(url);
-    return;
-  }
-
-  const input = document.createElement("input");
-  input.value = url;
-  input.setAttribute("readonly", "");
-  input.style.position = "fixed";
-  input.style.opacity = "0";
-  document.body.appendChild(input);
-  input.select();
-  document.execCommand("copy");
-  input.remove();
-}
+import { analyticsEvents } from "@/lib/analyticsEvents";
+import { copyCurrentUrl, detectInAppBrowser, getInAppBrowserName, isAndroid, type InAppBrowser } from "@/lib/browser";
 
 export default function OpenInBrowserBanner() {
   const [browser, setBrowser] = useState<InAppBrowser | null>(null);
@@ -59,16 +13,16 @@ export default function OpenInBrowserBanner() {
     const detectedBrowser = detectInAppBrowser();
     setBrowser(detectedBrowser);
     if (detectedBrowser) {
-      track("in_app_browser_detected", { browser: detectedBrowser });
+      track(analyticsEvents.inAppBrowserDetected, { browser: detectedBrowser });
     }
   }, []);
 
   if (!browser) return null;
 
-  const browserName = getBrowserName(browser);
+  const browserName = getInAppBrowserName(browser);
 
   function openExternalBrowser() {
-    track("open_external_browser_clicked", { browser });
+    track(analyticsEvents.openExternalBrowserClicked, { browser });
     const currentUrl = window.location.href;
 
     if (isAndroid() && window.location.protocol === "https:") {
@@ -81,14 +35,14 @@ export default function OpenInBrowserBanner() {
   }
 
   async function copyLink() {
-    track("in_app_copy_link_clicked", { browser });
+    track(analyticsEvents.inAppCopyLinkClicked, { browser });
     try {
       await copyCurrentUrl();
       setFeedback("คัดลอกลิงก์แล้ว นำไปเปิดใน Safari หรือ Chrome ได้เลย");
-      track("in_app_copy_link_success", { browser });
+      track(analyticsEvents.inAppCopyLinkSuccess, { browser });
     } catch {
       setFeedback("คัดลอกอัตโนมัติไม่ได้ ลองกดแชร์ลิงก์จากเมนูของแอปแทนนะ");
-      track("in_app_copy_link_error", { browser });
+      track(analyticsEvents.inAppCopyLinkError, { browser });
     }
   }
 

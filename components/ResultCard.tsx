@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { track } from "@vercel/analytics";
 import { useState } from "react";
 import { downloadTextFile } from "@/lib/downloadCard";
+import { analyticsEvents } from "@/lib/analyticsEvents";
 import type { SkyResult } from "@/types/result";
 
 type ResultCardProps = {
@@ -53,7 +54,7 @@ export default function ResultCard({ imageDataUrl, result, onCreateStory, onRese
   const text = `${result.skyName}\n\n${result.moodSummary}\n\n${result.healingMessage}\n\n${result.tinyAction}\n\n${result.hashtags.join(" ")}`;
 
   async function copyText() {
-    track("result_copy_clicked");
+    track(analyticsEvents.resultCopyClicked);
     try {
       if (!navigator.clipboard?.writeText) {
         throw new Error("Clipboard is not available");
@@ -62,27 +63,27 @@ export default function ResultCard({ imageDataUrl, result, onCreateStory, onRese
       await navigator.clipboard.writeText(text);
       setManualCopyText("");
       showFeedback("คัดลอกข้อความแล้ว");
-      track("result_copy_success", { method: "clipboard" });
+      track(analyticsEvents.resultCopySuccess, { method: "clipboard" });
     } catch {
       setManualCopyText(text);
       showFeedback("คัดลอกอัตโนมัติไม่ได้ กดค้างที่ข้อความด้านล่างเพื่อคัดลอกนะ");
-      track("result_copy_fallback");
+      track(analyticsEvents.resultCopyFallback);
     }
   }
 
   function saveText() {
-    track("result_save_clicked");
+    track(analyticsEvents.resultSaveClicked);
     downloadTextFile(text);
     showFeedback("บันทึกผลลัพธ์แล้ว");
   }
 
   function createStory() {
-    track("story_create_clicked");
+    track(analyticsEvents.storyCreateClicked);
     onCreateStory();
   }
 
   function resetResult() {
-    track("result_reset_clicked");
+    track(analyticsEvents.resultResetClicked);
     onReset();
   }
 

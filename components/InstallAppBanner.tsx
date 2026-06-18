@@ -2,20 +2,13 @@
 
 import { track } from "@vercel/analytics";
 import { useEffect, useState } from "react";
+import { analyticsEvents } from "@/lib/analyticsEvents";
+import { isIosSafari, isStandalone } from "@/lib/browser";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
 };
-
-function isStandalone() {
-  return window.matchMedia?.("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
-}
-
-function isIosSafari() {
-  const userAgent = navigator.userAgent;
-  return /iPad|iPhone|iPod/.test(userAgent) && /Safari/.test(userAgent) && !/CriOS|FxiOS|Instagram|FBAN|FBAV|Line/i.test(userAgent);
-}
 
 export default function InstallAppBanner() {
   const [promptEvent, setPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
@@ -30,13 +23,13 @@ export default function InstallAppBanner() {
 
     setShowIosHint(isIosSafari());
     if (isIosSafari()) {
-      track("pwa_ios_hint_shown");
+      track(analyticsEvents.pwaIosHintShown);
     }
 
     function handleBeforeInstallPrompt(event: Event) {
       event.preventDefault();
       setPromptEvent(event as BeforeInstallPromptEvent);
-      track("pwa_install_prompt_available");
+      track(analyticsEvents.pwaInstallPromptAvailable);
     }
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -47,11 +40,11 @@ export default function InstallAppBanner() {
 
   async function installApp() {
     if (!promptEvent) return;
-    track("pwa_install_clicked");
+    track(analyticsEvents.pwaInstallClicked);
     await promptEvent.prompt();
     const choice = await promptEvent.userChoice.catch(() => undefined);
     if (choice?.outcome) {
-      track("pwa_install_choice", { outcome: choice.outcome });
+      track(analyticsEvents.pwaInstallChoice, { outcome: choice.outcome });
     }
     setPromptEvent(null);
     localStorage.setItem("innersky-install-banner-dismissed", "1");
@@ -59,7 +52,7 @@ export default function InstallAppBanner() {
   }
 
   function dismiss() {
-    track("pwa_install_dismissed", { ios_hint: showIosHint });
+    track(analyticsEvents.pwaInstallDismissed, { ios_hint: showIosHint });
     localStorage.setItem("innersky-install-banner-dismissed", "1");
     setHidden(true);
   }

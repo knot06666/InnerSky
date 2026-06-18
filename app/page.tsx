@@ -10,6 +10,7 @@ import LoadingSky from "@/components/LoadingSky";
 import OpenInBrowserBanner from "@/components/OpenInBrowserBanner";
 import ResultCard from "@/components/ResultCard";
 import ShareStoryCard from "@/components/ShareStoryCard";
+import { analyticsEvents } from "@/lib/analyticsEvents";
 import type { MoodTone, SkyResult } from "@/types/result";
 
 type ViewState = "idle" | "loading" | "result";
@@ -65,13 +66,13 @@ export default function HomePage() {
   }, []);
 
   async function analyzeSky() {
-    track("analyze_clicked", {
+    track(analyticsEvents.analyzeClicked, {
       has_image: Boolean(imageDataUrl),
       tone,
     });
 
     if (!imageDataUrl) {
-      track("analysis_error", { reason: "missing_image" });
+      track(analyticsEvents.analysisError, { reason: "missing_image" });
       setError("กรุณาอัปโหลดรูปท้องฟ้าก่อนนะ");
       return;
     }
@@ -91,7 +92,7 @@ export default function HomePage() {
       const data = await response.json();
 
       if (!response.ok) {
-        track("analysis_error", {
+        track(analyticsEvents.analysisError, {
           reason: data.error ? "api_error" : "unknown_api_error",
           status: response.status,
         });
@@ -100,7 +101,7 @@ export default function HomePage() {
       }
 
       const skyResult = data as SkyResult;
-      track("analysis_success", {
+      track(analyticsEvents.analysisSuccess, {
         is_sky_or_nature: skyResult.isSkyOrNature,
         fallback: Boolean(skyResult.fallback),
         tone,
@@ -110,7 +111,7 @@ export default function HomePage() {
       window.setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
     } catch (requestError) {
       if (!trackedRequestError) {
-        track("analysis_error", { reason: "request_failed" });
+        track(analyticsEvents.analysisError, { reason: "request_failed" });
       }
       setError(requestError instanceof Error ? requestError.message : "เกิดข้อผิดพลาด ลองใหม่อีกครั้งนะ");
       setViewState("idle");
@@ -118,7 +119,7 @@ export default function HomePage() {
   }
 
   function loadDemoResult() {
-    track("demo_result_loaded");
+    track(analyticsEvents.demoResultLoaded);
     setImageDataUrl(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(demoSkySvg)}`);
     setTone("อ่อนโยน");
     setResult(demoResult);
@@ -128,7 +129,7 @@ export default function HomePage() {
   }
 
   function resetFlow() {
-    track("flow_reset");
+    track(analyticsEvents.flowReset);
     setImageDataUrl("");
     setResult(null);
     setError("");
@@ -137,7 +138,7 @@ export default function HomePage() {
   }
 
   function scrollToStory() {
-    track("story_created");
+    track(analyticsEvents.storyCreated);
     storyRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
