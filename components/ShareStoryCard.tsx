@@ -28,12 +28,43 @@ export default function ShareStoryCard({ imageDataUrl, result }: ShareStoryCardP
   useEffect(() => {
     if (!isCaptureModeOpen) return;
 
+    const scrollY = window.scrollY;
     const originalOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    const originalOverscroll = document.body.style.overscrollBehavior;
+    const originalPosition = document.body.style.position;
+    const originalTop = document.body.style.top;
+    const originalWidth = document.body.style.width;
+
     document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "none";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
 
     return () => {
       document.body.style.overflow = originalOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      document.body.style.overscrollBehavior = originalOverscroll;
+      document.body.style.position = originalPosition;
+      document.body.style.top = originalTop;
+      document.body.style.width = originalWidth;
+      window.scrollTo(0, scrollY);
     };
+  }, [isCaptureModeOpen]);
+
+  useEffect(() => {
+    if (!isCaptureModeOpen) return;
+
+    function closeWithEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        closeCaptureMode();
+      }
+    }
+
+    window.addEventListener("keydown", closeWithEscape);
+    return () => window.removeEventListener("keydown", closeWithEscape);
   }, [isCaptureModeOpen]);
 
   useEffect(() => {
@@ -70,6 +101,17 @@ export default function ShareStoryCard({ imageDataUrl, result }: ShareStoryCardP
     track(analyticsEvents.storyCaptureOpened, { instagram: isInstagram });
     setIsCaptureModeOpen(true);
     showFeedback(isInstagram ? "เปิดโหมดแคปแล้ว แคปหน้าจอนี้เพื่อนำไปลง Story ได้เลย" : "เปิดการ์ดเต็มจอแล้ว");
+  }
+
+  function closeCaptureMode() {
+    track(analyticsEvents.storyCaptureClosed, { instagram: isInstagram });
+    setIsCaptureModeOpen(false);
+  }
+
+  function closeWhenBackdropIsTapped(event: React.MouseEvent<HTMLDivElement>) {
+    if (event.target === event.currentTarget) {
+      closeCaptureMode();
+    }
   }
 
   async function downloadStory() {
@@ -218,23 +260,34 @@ export default function ShareStoryCard({ imageDataUrl, result }: ShareStoryCardP
       </p>
 
       {isCaptureModeOpen && previewUrl ? (
-        <div className={isInstagram ? "fixed inset-0 z-50 bg-black" : "fixed inset-0 z-50 grid bg-[#162026]/94 px-4 py-5"}>
+        <div
+          aria-modal="true"
+          className={isInstagram ? "fixed inset-0 z-[9999] bg-black" : "fixed inset-0 z-[9999] grid bg-[#162026]/94 px-4 py-5"}
+          onClick={closeWhenBackdropIsTapped}
+          role="dialog"
+        >
           {isInstagram ? (
             <>
-              <img alt="การ์ด Story สำหรับแคปหน้าจอ" className="h-[100dvh] w-screen object-contain" src={previewUrl} />
+              <img alt="การ์ด Story สำหรับแคปหน้าจอ" className="pointer-events-none h-[100dvh] w-screen select-none object-contain" src={previewUrl} />
               <button
-                className="absolute right-3 top-[max(12px,env(safe-area-inset-top))] rounded-full bg-black/62 px-4 py-2 text-sm font-extrabold text-white shadow-[0_10px_30px_rgba(0,0,0,0.24)] backdrop-blur-md"
-                onClick={() => {
-                  track(analyticsEvents.storyCaptureClosed, { instagram: true });
-                  setIsCaptureModeOpen(false);
-                }}
+                className="absolute right-3 top-[calc(max(12px,env(safe-area-inset-top))+72px)] z-[2] rounded-full bg-black/72 px-4 py-2 text-sm font-extrabold text-white shadow-[0_10px_30px_rgba(0,0,0,0.24)] backdrop-blur-md"
+                onClick={closeCaptureMode}
                 type="button"
               >
                 ปิด
               </button>
-              <p className="pointer-events-none absolute inset-x-4 bottom-[max(12px,env(safe-area-inset-bottom))] rounded-full bg-black/46 px-3 py-2 text-center text-[11px] font-bold leading-5 text-white/82 backdrop-blur-md">
+              <div className="absolute inset-x-4 bottom-[max(12px,env(safe-area-inset-bottom))] z-[2] grid gap-2">
+                <button
+                  className="min-h-11 rounded-full bg-white px-4 text-sm font-extrabold text-ink shadow-[0_16px_45px_rgba(0,0,0,0.28)]"
+                  onClick={closeCaptureMode}
+                  type="button"
+                >
+                  ปิดโหมดเต็มจอ
+                </button>
+                <p className="pointer-events-none rounded-full bg-black/50 px-3 py-2 text-center text-[11px] font-bold leading-5 text-white/82 backdrop-blur-md">
                 แคปหน้าจอนี้ แล้วกดปิดเพื่อกลับไปที่เว็บ
-              </p>
+                </p>
+              </div>
             </>
           ) : (
             <div className="mx-auto flex h-full w-full max-w-md flex-col">
@@ -242,10 +295,7 @@ export default function ShareStoryCard({ imageDataUrl, result }: ShareStoryCardP
                 <p className="text-sm font-extrabold text-white">แคปหน้าจอหรือกดบันทึกจาก browser ได้เลย</p>
                 <button
                   className="min-h-10 rounded-[8px] bg-white/14 px-4 text-sm font-extrabold text-white"
-                  onClick={() => {
-                    track(analyticsEvents.storyCaptureClosed, { instagram: false });
-                    setIsCaptureModeOpen(false);
-                  }}
+                  onClick={closeCaptureMode}
                   type="button"
                 >
                   ปิด
