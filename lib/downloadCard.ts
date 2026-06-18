@@ -19,7 +19,7 @@ export function createDownloadFileName(kind: "result" | "story", extension: "txt
 }
 
 export function downloadTextFile(text: string) {
-  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const blob = new Blob(["\uFEFF", text], { type: "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -79,31 +79,31 @@ export async function drawStoryCard(canvas: HTMLCanvasElement, imageDataUrl: str
   ctx.fillStyle = wash;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  roundedRect(ctx, 86, 120, 908, 720, 44);
+  roundedRect(ctx, 86, 120, 908, 680, 44);
   ctx.save();
   ctx.clip();
-  drawCoverImage(ctx, image, 86, 120, 908, 720);
+  drawCoverImage(ctx, image, 86, 120, 908, 680);
   ctx.restore();
 
   ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-  roundedRect(ctx, 86, 875, 908, 560, 44);
+  roundedRect(ctx, 86, 830, 908, 660, 44);
   ctx.fill();
 
   ctx.fillStyle = "#55788f";
   ctx.font = `700 36px ${storyFont}`;
-  ctx.fillText("ฟ้าข้างใน", 140, 962);
+  ctx.fillText("ฟ้าข้างใน", 140, 917);
 
   ctx.fillStyle = "#26313a";
   ctx.font = `800 66px ${storyFont}`;
-  wrapText(ctx, result.skyName, 140, 1068, 800, 76, 2);
+  wrapText(ctx, result.skyName, 140, 1023, 800, 76, 2);
 
   ctx.fillStyle = "#50616c";
-  ctx.font = `500 39px ${storyFont}`;
-  wrapText(ctx, result.storyText || result.healingMessage, 140, 1232, 800, 58, 3);
+  ctx.font = `500 37px ${storyFont}`;
+  wrapText(ctx, getStoryCardMessage(result), 140, 1180, 800, 54, 5);
 
   ctx.fillStyle = "#55788f";
   ctx.font = `700 30px ${storyFont}`;
-  wrapText(ctx, result.hashtags.slice(0, 3).join(" "), 140, 1382, 800, 42, 2);
+  wrapText(ctx, result.hashtags.slice(0, 3).join(" "), 140, 1444, 800, 42, 2);
 
   ctx.fillStyle = "rgba(255, 255, 255, 0.82)";
   roundedRect(ctx, 86, 1500, 908, 84, 42);
@@ -138,6 +138,19 @@ function drawCoverImage(ctx: CanvasRenderingContext2D, image: HTMLImageElement, 
   const dx = x + (width - drawWidth) / 2;
   const dy = y + (height - drawHeight) / 2;
   ctx.drawImage(image, dx, dy, drawWidth, drawHeight);
+}
+
+function getStoryCardMessage(result: SkyResult) {
+  const healingLines = result.healingMessage
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (healingLines.length >= 2) {
+    return healingLines.slice(0, 5).join("\n");
+  }
+
+  return [result.storyText, result.tinyAction].filter(Boolean).join("\n");
 }
 
 function wrapText(

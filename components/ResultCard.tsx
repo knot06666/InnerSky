@@ -51,7 +51,20 @@ export default function ResultCard({ imageDataUrl, result, onCreateStory, onRese
     );
   }
 
-  const text = `${result.skyName}\n\n${result.moodSummary}\n\n${result.healingMessage}\n\n${result.tinyAction}\n\n${result.hashtags.join(" ")}`;
+  const text = [
+    "ฟ้าข้างใน",
+    "",
+    `ชื่อฟ้าของวันนี้: ${result.skyName}`,
+    `Mood: ${result.moodSummary}`,
+    "",
+    "ข้อความฮีลใจ",
+    result.healingMessage,
+    "",
+    `Story Text: ${result.storyText}`,
+    `สิ่งเล็ก ๆ สำหรับวันนี้: ${result.tinyAction}`,
+    "",
+    result.hashtags.join(" "),
+  ].join("\n");
 
   async function copyText() {
     track(analyticsEvents.resultCopyClicked);
