@@ -51,7 +51,7 @@ function getGeminiApiKey(): string {
 }
 
 function getGeminiModelCandidates(): string[] {
-  const primaryModel = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+  const primaryModel = process.env.GEMINI_MODEL ?? "gemini-3.5-flash";
   const fallbackModels = (process.env.GEMINI_MODEL_FALLBACKS ?? "")
     .split(",")
     .map((model) => model.trim())

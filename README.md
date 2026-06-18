@@ -14,6 +14,8 @@ npm run dev
 
 ถ้า deploy จริง ให้ตั้ง `NEXT_PUBLIC_SITE_URL=https://innersky.vercel.app` หรือ URL ของโดเมนจริง เพื่อให้ลิงก์ที่แชร์มี preview ถูกต้อง
 
+ค่า model ที่แนะนำตอนนี้คือ `GEMINI_MODEL=gemini-3.5-flash` และ `GEMINI_MODEL_FALLBACKS=gemini-2.5-flash,gemini-2.5-flash-lite`
+
 ## MVP Flow
 
 - Landing page ภาษาไทย
