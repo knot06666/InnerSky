@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@vercel/analytics";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Hero from "@/components/Hero";
@@ -64,13 +65,21 @@ export default function HomePage() {
   }, []);
 
   async function analyzeSky() {
+    track("analyze_clicked", {
+      has_image: Boolean(imageDataUrl),
+      tone,
+    });
+
     if (!imageDataUrl) {
+      track("analysis_error", { reason: "missing_image" });
       setError("กรุณาอัปโหลดรูปท้องฟ้าก่อนนะ");
       return;
     }
 
     setError("");
     setViewState("loading");
+
+    let trackedRequestError = false;
 
     try {
       const response = await fetch("/api/analyze", {
@@ -82,19 +91,34 @@ export default function HomePage() {
       const data = await response.json();
 
       if (!response.ok) {
+        track("analysis_error", {
+          reason: data.error ? "api_error" : "unknown_api_error",
+          status: response.status,
+        });
+        trackedRequestError = true;
         throw new Error(data.error || "วิเคราะห์รูปนี้ไม่สำเร็จ");
       }
 
-      setResult(data as SkyResult);
+      const skyResult = data as SkyResult;
+      track("analysis_success", {
+        is_sky_or_nature: skyResult.isSkyOrNature,
+        fallback: Boolean(skyResult.fallback),
+        tone,
+      });
+      setResult(skyResult);
       setViewState("result");
       window.setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
     } catch (requestError) {
+      if (!trackedRequestError) {
+        track("analysis_error", { reason: "request_failed" });
+      }
       setError(requestError instanceof Error ? requestError.message : "เกิดข้อผิดพลาด ลองใหม่อีกครั้งนะ");
       setViewState("idle");
     }
   }
 
   function loadDemoResult() {
+    track("demo_result_loaded");
     setImageDataUrl(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(demoSkySvg)}`);
     setTone("อ่อนโยน");
     setResult(demoResult);
@@ -104,6 +128,7 @@ export default function HomePage() {
   }
 
   function resetFlow() {
+    track("flow_reset");
     setImageDataUrl("");
     setResult(null);
     setError("");
@@ -112,6 +137,7 @@ export default function HomePage() {
   }
 
   function scrollToStory() {
+    track("story_created");
     storyRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 

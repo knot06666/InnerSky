@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@vercel/analytics";
 import { useState } from "react";
 import MoodToneSelector from "@/components/MoodToneSelector";
 import { compressImageForAnalysis } from "@/lib/compressImage";
@@ -34,13 +35,20 @@ export default function ImageUploader({
     const file = event.target.files?.[0];
     if (!file) return;
 
+    track("upload_selected", {
+      file_type: file.type || "unknown",
+      file_size_mb: Number((file.size / 1024 / 1024).toFixed(2)),
+    });
+
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      track("upload_rejected", { reason: "unsupported_type", file_type: file.type || "unknown" });
       onImageChange("");
       onError("รองรับเฉพาะรูป jpg, png หรือ webp เท่านั้น");
       return;
     }
 
     if (file.size > maxOriginalFileSize) {
+      track("upload_rejected", { reason: "file_too_large", file_size_mb: Number((file.size / 1024 / 1024).toFixed(2)) });
       onImageChange("");
       onError("รูปนี้ใหญ่เกินไป ลองเลือกรูปที่เล็กกว่า 14MB นะ");
       return;
@@ -52,7 +60,12 @@ export default function ImageUploader({
       const dataUrl = await compressImageForAnalysis(file);
       onImageChange(dataUrl);
       onError("");
+      track("upload_ready", {
+        file_type: file.type,
+        original_size_mb: Number((file.size / 1024 / 1024).toFixed(2)),
+      });
     } catch {
+      track("upload_error", { reason: "compression_failed" });
       onImageChange("");
       onError("อ่านรูปไม่สำเร็จ ลองเลือกรูปใหม่อีกครั้งนะ");
     } finally {

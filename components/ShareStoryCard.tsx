@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { track } from "@vercel/analytics";
 import { useEffect, useRef, useState } from "react";
 import { canvasToDataUrl, canvasToPngBlob, drawStoryCard } from "@/lib/downloadCard";
 import type { SkyResult } from "@/types/result";
@@ -51,6 +52,7 @@ export default function ShareStoryCard({ imageDataUrl, result }: ShareStoryCardP
       if (mounted) {
         setPreviewUrl(canvasToDataUrl(canvasRef.current));
         setReady(true);
+        track("story_card_rendered", { instagram: isInstagramInAppBrowser() });
       }
     }
 
@@ -68,12 +70,14 @@ export default function ShareStoryCard({ imageDataUrl, result }: ShareStoryCardP
 
   function openCaptureMode() {
     if (!previewUrl) return;
+    track("story_capture_opened", { instagram: isInstagram });
     setIsCaptureModeOpen(true);
     showFeedback(isInstagram ? "เปิดโหมดแคปแล้ว แคปหน้าจอนี้เพื่อนำไปลง Story ได้เลย" : "เปิดการ์ดเต็มจอแล้ว");
   }
 
   async function downloadStory() {
     if (!canvasRef.current) return;
+    track("story_download_clicked", { instagram: isInstagram });
 
     try {
       const blob = await canvasToPngBlob(canvasRef.current);
@@ -86,14 +90,17 @@ export default function ShareStoryCard({ imageDataUrl, result }: ShareStoryCardP
       link.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 15000);
       showFeedback("เริ่มบันทึกการ์ดแล้ว");
+      track("story_download_started");
     } catch {
       openCaptureMode();
       showFeedback("บันทึกตรงไม่ได้ เปิดการ์ดเต็มจอให้แคปแทนนะ");
+      track("story_download_fallback");
     }
   }
 
   async function shareStory() {
     if (!canvasRef.current) return;
+    track("story_share_clicked", { instagram: isInstagram });
 
     try {
       const blob = await canvasToPngBlob(canvasRef.current);
@@ -106,6 +113,7 @@ export default function ShareStoryCard({ imageDataUrl, result }: ShareStoryCardP
           files: [file],
         });
         showFeedback("เปิดหน้าต่างแชร์แล้ว");
+        track("story_share_success", { mode: "file" });
         return;
       }
 
@@ -115,14 +123,17 @@ export default function ShareStoryCard({ imageDataUrl, result }: ShareStoryCardP
           text: result.storyText || result.skyName,
         });
         showFeedback(isInstagram ? "ถ้าจะลง Story ให้ใช้แคป Story แทนนะ" : "แชร์ข้อความแล้ว ถ้าจะลง Story ให้บันทึกรูปเพิ่มนะ");
+        track("story_share_success", { mode: "text" });
         return;
       }
 
       openCaptureMode();
       showFeedback("เครื่องนี้ยังแชร์ตรงไม่ได้ เปิดโหมดแคปให้แทนนะ");
+      track("story_share_fallback", { reason: "unsupported" });
     } catch {
       openCaptureMode();
       showFeedback("แชร์ไม่สำเร็จ เปิดโหมดแคปให้แทนนะ");
+      track("story_share_error");
     }
   }
 
@@ -216,7 +227,10 @@ export default function ShareStoryCard({ imageDataUrl, result }: ShareStoryCardP
               <img alt="การ์ด Story สำหรับแคปหน้าจอ" className="h-[100dvh] w-screen object-contain" src={previewUrl} />
               <button
                 className="absolute right-3 top-[max(12px,env(safe-area-inset-top))] rounded-full bg-black/62 px-4 py-2 text-sm font-extrabold text-white shadow-[0_10px_30px_rgba(0,0,0,0.24)] backdrop-blur-md"
-                onClick={() => setIsCaptureModeOpen(false)}
+                onClick={() => {
+                  track("story_capture_closed", { instagram: true });
+                  setIsCaptureModeOpen(false);
+                }}
                 type="button"
               >
                 ปิด
@@ -231,7 +245,10 @@ export default function ShareStoryCard({ imageDataUrl, result }: ShareStoryCardP
                 <p className="text-sm font-extrabold text-white">แคปหน้าจอหรือกดบันทึกจาก browser ได้เลย</p>
                 <button
                   className="min-h-10 rounded-[8px] bg-white/14 px-4 text-sm font-extrabold text-white"
-                  onClick={() => setIsCaptureModeOpen(false)}
+                  onClick={() => {
+                    track("story_capture_closed", { instagram: false });
+                    setIsCaptureModeOpen(false);
+                  }}
                   type="button"
                 >
                   ปิด

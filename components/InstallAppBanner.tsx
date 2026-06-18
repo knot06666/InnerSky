@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@vercel/analytics";
 import { useEffect, useState } from "react";
 
 type BeforeInstallPromptEvent = Event & {
@@ -28,10 +29,14 @@ export default function InstallAppBanner() {
     }
 
     setShowIosHint(isIosSafari());
+    if (isIosSafari()) {
+      track("pwa_ios_hint_shown");
+    }
 
     function handleBeforeInstallPrompt(event: Event) {
       event.preventDefault();
       setPromptEvent(event as BeforeInstallPromptEvent);
+      track("pwa_install_prompt_available");
     }
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -42,13 +47,19 @@ export default function InstallAppBanner() {
 
   async function installApp() {
     if (!promptEvent) return;
+    track("pwa_install_clicked");
     await promptEvent.prompt();
-    await promptEvent.userChoice.catch(() => undefined);
+    const choice = await promptEvent.userChoice.catch(() => undefined);
+    if (choice?.outcome) {
+      track("pwa_install_choice", { outcome: choice.outcome });
+    }
     setPromptEvent(null);
-    dismiss();
+    localStorage.setItem("innersky-install-banner-dismissed", "1");
+    setHidden(true);
   }
 
   function dismiss() {
+    track("pwa_install_dismissed", { ios_hint: showIosHint });
     localStorage.setItem("innersky-install-banner-dismissed", "1");
     setHidden(true);
   }

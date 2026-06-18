@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { track } from "@vercel/analytics";
 import { useState } from "react";
 import { downloadTextFile } from "@/lib/downloadCard";
 import type { SkyResult } from "@/types/result";
@@ -41,7 +42,7 @@ export default function ResultCard({ imageDataUrl, result, onCreateStory, onRese
             {result.nonSkyMessage ||
               "ภาพนี้อาจไม่ใช่ท้องฟ้า ก้อนเมฆ แสงธรรมชาติ หรือวิวธรรมชาติที่ฟ้าข้างในอ่านได้ ลองอัปโหลดรูปฟ้า เมฆ แสงเย็น ๆ หรือวิวธรรมชาติอีกครั้งนะ"}
           </p>
-          <button className="mt-5 min-h-11 w-full rounded-[8px] bg-[#55788f] px-3 text-sm font-extrabold text-white" onClick={onReset} type="button">
+          <button className="mt-5 min-h-11 w-full rounded-[8px] bg-[#55788f] px-3 text-sm font-extrabold text-white" onClick={resetResult} type="button">
             อัปโหลดรูปใหม่
           </button>
         </div>
@@ -52,6 +53,7 @@ export default function ResultCard({ imageDataUrl, result, onCreateStory, onRese
   const text = `${result.skyName}\n\n${result.moodSummary}\n\n${result.healingMessage}\n\n${result.tinyAction}\n\n${result.hashtags.join(" ")}`;
 
   async function copyText() {
+    track("result_copy_clicked");
     try {
       if (!navigator.clipboard?.writeText) {
         throw new Error("Clipboard is not available");
@@ -60,15 +62,28 @@ export default function ResultCard({ imageDataUrl, result, onCreateStory, onRese
       await navigator.clipboard.writeText(text);
       setManualCopyText("");
       showFeedback("คัดลอกข้อความแล้ว");
+      track("result_copy_success", { method: "clipboard" });
     } catch {
       setManualCopyText(text);
       showFeedback("คัดลอกอัตโนมัติไม่ได้ กดค้างที่ข้อความด้านล่างเพื่อคัดลอกนะ");
+      track("result_copy_fallback");
     }
   }
 
   function saveText() {
+    track("result_save_clicked");
     downloadTextFile(text);
     showFeedback("บันทึกผลลัพธ์แล้ว");
+  }
+
+  function createStory() {
+    track("story_create_clicked");
+    onCreateStory();
+  }
+
+  function resetResult() {
+    track("result_reset_clicked");
+    onReset();
   }
 
   return (
@@ -126,7 +141,7 @@ export default function ResultCard({ imageDataUrl, result, onCreateStory, onRese
           <div className="mt-5 grid gap-2">
             <button
               className="min-h-12 rounded-[8px] bg-[#d7a96f] px-4 text-sm font-extrabold text-white shadow-[0_14px_30px_rgba(215,169,111,0.24)]"
-              onClick={onCreateStory}
+              onClick={createStory}
               type="button"
             >
               สร้างการ์ดลง Story
@@ -139,7 +154,7 @@ export default function ResultCard({ imageDataUrl, result, onCreateStory, onRese
               <button className="min-h-10 rounded-[8px] bg-white px-2 text-xs font-extrabold text-[#55788f] sm:text-sm" onClick={copyText} type="button">
                 คัดลอก
               </button>
-              <button className="min-h-10 rounded-[8px] bg-white px-2 text-xs font-extrabold text-[#55788f] sm:text-sm" onClick={onReset} type="button">
+              <button className="min-h-10 rounded-[8px] bg-white px-2 text-xs font-extrabold text-[#55788f] sm:text-sm" onClick={resetResult} type="button">
                 ลองใหม่
               </button>
             </div>

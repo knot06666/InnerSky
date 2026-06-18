@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@vercel/analytics";
 import { useEffect, useState } from "react";
 
 type InAppBrowser = "instagram" | "line" | "facebook" | "tiktok" | "other";
@@ -55,7 +56,11 @@ export default function OpenInBrowserBanner() {
   const [feedback, setFeedback] = useState("");
 
   useEffect(() => {
-    setBrowser(detectInAppBrowser());
+    const detectedBrowser = detectInAppBrowser();
+    setBrowser(detectedBrowser);
+    if (detectedBrowser) {
+      track("in_app_browser_detected", { browser: detectedBrowser });
+    }
   }, []);
 
   if (!browser) return null;
@@ -63,6 +68,7 @@ export default function OpenInBrowserBanner() {
   const browserName = getBrowserName(browser);
 
   function openExternalBrowser() {
+    track("open_external_browser_clicked", { browser });
     const currentUrl = window.location.href;
 
     if (isAndroid() && window.location.protocol === "https:") {
@@ -75,11 +81,14 @@ export default function OpenInBrowserBanner() {
   }
 
   async function copyLink() {
+    track("in_app_copy_link_clicked", { browser });
     try {
       await copyCurrentUrl();
       setFeedback("คัดลอกลิงก์แล้ว นำไปเปิดใน Safari หรือ Chrome ได้เลย");
+      track("in_app_copy_link_success", { browser });
     } catch {
       setFeedback("คัดลอกอัตโนมัติไม่ได้ ลองกดแชร์ลิงก์จากเมนูของแอปแทนนะ");
+      track("in_app_copy_link_error", { browser });
     }
   }
 
