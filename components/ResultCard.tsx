@@ -86,7 +86,11 @@ export default function ResultCard({ imageDataUrl, result, onCreateStory, onRese
 
         <div className="p-5 sm:p-7">
           <p className="w-fit rounded-full bg-skyMist px-3 py-1 text-xs font-extrabold text-[#55788f]">ผลลัพธ์จากฟ้าข้างใน</p>
-          {result.fallback ? <p className="mt-3 text-xs leading-5 text-softGray">ตอนนี้ AI ตอบไม่ได้เต็มที่ เลยใช้ข้อความสำรองที่ยังอ่อนโยนกับใจคุณอยู่</p> : null}
+          {result.fallback ? (
+            <p className="mt-3 text-xs leading-5 text-softGray">
+              {result.fallbackMessage || "ตอนนี้ AI ตอบไม่ได้เต็มที่ เลยใช้ข้อความสำรองที่ยังอ่อนโยนกับใจคุณอยู่"}
+            </p>
+          ) : null}
 
           <h2 className="mt-4 text-[28px] font-extrabold leading-tight text-ink sm:text-3xl">{result.skyName}</h2>
           <p className="mt-3 text-[15px] font-bold leading-7 text-[#55788f] sm:text-base">{result.moodSummary}</p>

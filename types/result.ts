@@ -16,6 +16,7 @@ export type SkyResult = {
   tinyAction: string;
   hashtags: string[];
   fallback?: boolean;
+  fallbackMessage?: string;
 };
 
 export type AnalyzeSkyRequest = {

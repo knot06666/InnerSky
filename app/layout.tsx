@@ -21,6 +21,9 @@ export const metadata: Metadata = {
   authors: [{ name: "knotji" }],
   creator: "knotji",
   keywords: ["ฟ้าข้างใน", "ฮีลใจ", "ท้องฟ้า", "ก้อนเมฆ", "AI", "Gemini"],
+  alternates: {
+    canonical: siteUrl,
+  },
   openGraph: {
     title,
     description,
@@ -30,9 +33,10 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/og-image.svg",
+        url: "/opengraph-image",
         width: 1200,
         height: 630,
+        type: "image/png",
         alt: "ฟ้าข้างใน เว็บฮีลใจจากรูปท้องฟ้า",
       },
     ],
@@ -41,7 +45,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title,
     description,
-    images: ["/og-image.svg"],
+    images: ["/opengraph-image"],
   },
 };
 
