@@ -171,8 +171,14 @@ function normalizeText(value: unknown, fallback: string, options: { maxChars: nu
 
 function normalizeHashtags(value: unknown) {
   const source = Array.isArray(value) ? value.join(" ") : typeof value === "string" ? value : "";
-  const hashtags = source.match(/#[\p{L}\p{N}_]+/gu)?.slice(0, 5);
-  return hashtags?.length ? hashtags : defaultHashtags;
+  const hashtags = source
+    .split(/\s+/)
+    .map((part) => part.trim())
+    .filter((part) => /^#[\p{L}\p{M}\p{N}_]+$/u.test(part))
+    .filter((part) => part.length >= 4)
+    .slice(0, 5);
+
+  return hashtags.length >= 3 ? hashtags : defaultHashtags;
 }
 
 function cleanJson(text: string): SkyResult {
