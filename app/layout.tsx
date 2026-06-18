@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_Thai } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import PwaRegister from "@/components/PwaRegister";
 import "./globals.css";
 
 const notoSansThai = Noto_Sans_Thai({
@@ -61,6 +62,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="th" className={notoSansThai.variable}>
       <body>
         {children}
+        <PwaRegister />
         <Analytics />
       </body>
     </html>

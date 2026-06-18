@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Hero from "@/components/Hero";
 import ImageUploader from "@/components/ImageUploader";
+import InstallAppBanner from "@/components/InstallAppBanner";
 import LoadingSky from "@/components/LoadingSky";
 import OpenInBrowserBanner from "@/components/OpenInBrowserBanner";
 import ResultCard from "@/components/ResultCard";
@@ -121,6 +122,7 @@ export default function HomePage() {
 
       <Hero onStart={() => uploaderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} />
       <OpenInBrowserBanner />
+      <InstallAppBanner />
 
       {isDemoMode ? (
         <section className="mx-auto mb-4 max-w-md rounded-[8px] border border-[#d7e6ee] bg-white/70 p-3 text-center shadow-soft backdrop-blur-xl">
