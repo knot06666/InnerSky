@@ -76,6 +76,9 @@ function buildPrompt(tone: MoodTone): string {
 
 กฎสำคัญ:
 - ตอบเป็น JSON เท่านั้น ห้ามมี markdown
+- ห้ามใช้ HTML tags เช่น <p>, <h2>, <strong>, <br>
+- ห้ามใส่ label ซ้ำใน value เช่น "Mood Summary:", "Healing Message:", "Story Text:"
+- ค่าแต่ละ field ต้องเป็นข้อความ plain text เท่านั้น
 - ใช้ภาษาไทยเท่านั้น
 - น้ำเสียงอบอุ่น ละมุน จริงใจ และปลอดภัย
 - ไม่พูดเหมือนหมอดู
@@ -115,8 +118,61 @@ function responseSchema(Type: any) {
         items: { type: Type.STRING },
       },
     },
-    required: ["isSkyOrNature"],
+    required: ["isSkyOrNature", "skyName", "moodSummary", "healingMessage", "storyText", "tinyAction", "hashtags"],
   };
+}
+
+function decodeHtmlEntities(value: string) {
+  return value
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'");
+}
+
+function hasResponseLeak(value: string) {
+  return /<\/?[a-z][\s\S]*?>|```|isSkyOrNature|nonSkyMessage|skyName|moodSummary|healingMessage|storyText|tinyAction|hashtags|Sky Name|Mood Summary|Healing Message|Story Text|Tiny Action|Hashtags/i.test(value);
+}
+
+function normalizeText(value: unknown, fallback: string, options: { maxChars: number; maxLines?: number }) {
+  if (typeof value !== "string") return fallback;
+
+  const raw = value.trim();
+  if (!raw) return fallback;
+
+  if (hasResponseLeak(raw) && raw.length > options.maxChars) {
+    return fallback;
+  }
+
+  const withoutTags = decodeHtmlEntities(raw)
+    .replace(/<\s*br\s*\/?>/gi, "\n")
+    .replace(/<\/\s*p\s*>/gi, "\n")
+    .replace(/<\/\s*h[1-6]\s*>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/(?:Sky Name|Mood Summary|Healing Message|Story Text|Tiny Action|Hashtags|isSkyOrNature|nonSkyMessage|skyName|moodSummary|healingMessage|storyText|tinyAction|hashtags)\s*:\s*/gi, "")
+    .replace(/\r/g, "")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  if (!withoutTags || hasResponseLeak(withoutTags)) return fallback;
+
+  const lines = withoutTags
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, options.maxLines ?? 1);
+  const clipped = lines.join("\n").slice(0, options.maxChars).trim();
+
+  return clipped || fallback;
+}
+
+function normalizeHashtags(value: unknown) {
+  const source = Array.isArray(value) ? value.join(" ") : typeof value === "string" ? value : "";
+  const hashtags = source.match(/#[\p{L}\p{N}_]+/gu)?.slice(0, 5);
+  return hashtags?.length ? hashtags : defaultHashtags;
 }
 
 function cleanJson(text: string): SkyResult {
@@ -134,8 +190,11 @@ function cleanJson(text: string): SkyResult {
     return {
       isSkyOrNature: false,
       nonSkyMessage:
-        parsed.nonSkyMessage ||
+        normalizeText(
+          parsed.nonSkyMessage,
         "ภาพนี้อาจไม่ใช่ท้องฟ้า ก้อนเมฆ แสงธรรมชาติ หรือวิวธรรมชาติที่ฟ้าข้างในอ่านได้ ลองอัปโหลดรูปฟ้า เมฆ แสงเย็น ๆ หรือวิวธรรมชาติอีกครั้งนะ",
+          { maxChars: 220 },
+        ),
       skyName: "",
       moodSummary: "",
       healingMessage: "",
@@ -147,14 +206,17 @@ function cleanJson(text: string): SkyResult {
 
   return {
     isSkyOrNature: true,
-    skyName: parsed.skyName || "ฟ้าที่กำลังพัก",
-    moodSummary: parsed.moodSummary || "เหมือนว่าใจของคุณกำลังต้องการความเบา",
+    skyName: normalizeText(parsed.skyName, "ฟ้าที่กำลังพัก", { maxChars: 42 }),
+    moodSummary: normalizeText(parsed.moodSummary, "เหมือนว่าใจของคุณกำลังต้องการความเบา", { maxChars: 130 }),
     healingMessage:
-      parsed.healingMessage ||
+      normalizeText(
+        parsed.healingMessage,
       "วันนี้ไม่ต้องรีบเป็นคำตอบของทุกอย่าง\nแค่ค่อย ๆ อยู่กับตัวเองอย่างใจดี\nก็พอแล้วสำหรับตอนนี้",
-    storyText: parsed.storyText || "แค่ยังยอมให้แสงเข้ามา ก็เก่งมากแล้ว",
-    tinyAction: parsed.tinyAction || "ลองพักโดยไม่ต้องรู้สึกผิดสัก 10 นาที",
-    hashtags: Array.isArray(parsed.hashtags) && parsed.hashtags.length > 0 ? parsed.hashtags.slice(0, 5) : defaultHashtags,
+        { maxChars: 360, maxLines: 5 },
+      ),
+    storyText: normalizeText(parsed.storyText, "แค่ยังยอมให้แสงเข้ามา ก็เก่งมากแล้ว", { maxChars: 150 }),
+    tinyAction: normalizeText(parsed.tinyAction, "ลองพักโดยไม่ต้องรู้สึกผิดสัก 10 นาที", { maxChars: 130 }),
+    hashtags: normalizeHashtags(parsed.hashtags),
   };
 }
 
